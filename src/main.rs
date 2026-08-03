@@ -3,6 +3,7 @@
 mod app;
 mod config;
 mod i18n;
+mod leds;
 
 fn main() -> cosmic::iced::Result {
     // Get the system's preferred languages.
@@ -11,6 +12,6 @@ fn main() -> cosmic::iced::Result {
     // Enable localizations to be applied.
     i18n::init(&requested_languages);
 
-    // Starts the applet's event loop with `()` as the application's flags.
-    cosmic::applet::run::<app::AppModel>(())
+    // Starts the applet's event loop with the app configuration as flags.
+    cosmic::applet::run::<app::AppModel>(config::Flags::new())
 }

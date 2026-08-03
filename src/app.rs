@@ -1,26 +1,29 @@
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::config::Config;
+use std::time::Duration;
+
+use crate::config::{Config, Flags};
 use crate::fl;
-use cosmic::cosmic_config::{self, CosmicConfigEntry};
+use crate::leds::LedState;
 use cosmic::iced::platform_specific::shell::wayland::commands::popup::{destroy_popup, get_popup};
-use cosmic::iced::{futures, window::Id, Limits, Subscription};
+use cosmic::iced::window::Id;
+use cosmic::iced::{Limits, Subscription};
 use cosmic::prelude::*;
 use cosmic::widget;
-use futures::SinkExt;
 
 /// The application model stores app-specific state used to describe its interface and
 /// drive its logic.
-#[derive(Default)]
-pub struct AppModel {
+pub(crate) struct AppModel {
     /// Application state which is managed by the COSMIC runtime.
     core: cosmic::Core,
     /// The popup id.
     popup: Option<Id>,
     /// Configuration data that persists between application runs.
     config: Config,
-    /// Example row toggler.
-    example_row: bool,
+    /// Handler used to persist configuration changes.
+    config_handler: Option<cosmic::cosmic_config::Config>,
+    /// Current keyboard lock indicators.
+    leds: LedState,
 }
 
 /// Messages emitted by the application and its widgets.
@@ -28,24 +31,25 @@ pub struct AppModel {
 pub enum Message {
     TogglePopup,
     PopupClosed(Id),
-    SubscriptionChannel,
-    UpdateConfig(Config),
-    ToggleExampleRow(bool),
+    Tick,
+    ToggleShowCapsLock(bool),
+    ToggleShowNumLock(bool),
+    ToggleShowScrollLock(bool),
 }
 
 /// Create a COSMIC application from the app model
 impl cosmic::Application for AppModel {
     /// The async executor that will be used to run your application's commands.
-    type Executor = cosmic::executor::Default;
+    type Executor = cosmic::SingleThreadExecutor;
 
     /// Data that your application receives to its init method.
-    type Flags = ();
+    type Flags = Flags;
 
     /// Messages which the application and its widgets will emit.
     type Message = Message;
 
     /// Unique identifier in RDNN (reverse domain name notation) format.
-    const APP_ID: &'static str = "com.github.pop-os.cosmic-app-template";
+    const APP_ID: &'static str = crate::config::APP_ID;
 
     fn core(&self) -> &cosmic::Core {
         &self.core
@@ -56,26 +60,13 @@ impl cosmic::Application for AppModel {
     }
 
     /// Initializes the application with any given flags and startup commands.
-    fn init(
-        core: cosmic::Core,
-        _flags: Self::Flags,
-    ) -> (Self, Task<cosmic::Action<Self::Message>>) {
-        // Construct the app model with the runtime's core.
+    fn init(core: cosmic::Core, flags: Self::Flags) -> (Self, Task<cosmic::Action<Self::Message>>) {
         let app = AppModel {
             core,
-            config: cosmic_config::Config::new(Self::APP_ID, Config::VERSION)
-                .map(|context| match Config::get_entry(&context) {
-                    Ok(config) => config,
-                    Err((_errors, config)) => {
-                        // for why in errors {
-                        //     tracing::error!(%why, "error loading app config");
-                        // }
-
-                        config
-                    }
-                })
-                .unwrap_or_default(),
-            ..Default::default()
+            popup: None,
+            config: flags.config,
+            config_handler: flags.config_handler,
+            leds: LedState::read(),
         };
 
         (app, Task::none())
@@ -91,21 +82,42 @@ impl cosmic::Application for AppModel {
     /// This view should emit messages to toggle the applet's popup window, which will
     /// be drawn using the `view_window` method.
     fn view(&self) -> Element<'_, Self::Message> {
-        self.core
-            .applet
-            .icon_button("display-symbolic")
-            .on_press(Message::TogglePopup)
-            .into()
+        let mut chips = widget::row::with_capacity(3).spacing(2);
+        if self.config.show_caps {
+            chips = chips.push(lock_chip("A", self.leds.caps == Some(true)));
+        }
+        if self.config.show_num {
+            chips = chips.push(lock_chip("123", self.leds.num == Some(true)));
+        }
+        if self.config.show_scroll {
+            chips = chips.push(lock_chip("⇅", self.leds.scroll == Some(true)));
+        }
+
+        let button = widget::button::custom(chips)
+            .class(cosmic::theme::Button::AppletIcon)
+            .on_press_down(Message::TogglePopup);
+
+        widget::autosize::autosize(button, cosmic::widget::Id::unique()).into()
     }
 
-    /// The applet's popup window will be drawn using this view method. If there are
-    /// multiple poups, you may match the id parameter to determine which popup to
-    /// create a view for.
+    /// The applet's popup window will be drawn using this view method.
     fn view_window(&self, _id: Id) -> Element<'_, Self::Message> {
-        let content_list = widget::list_column().add(widget::settings::item(
-            fl!("example-row"),
-            widget::toggler(self.example_row).on_toggle(Message::ToggleExampleRow),
-        ));
+        let content_list = widget::list_column()
+            .add(cosmic::applet::padded_control(toggle_row(
+                fl!("caps-lock"),
+                self.config.show_caps,
+                Message::ToggleShowCapsLock,
+            )))
+            .add(cosmic::applet::padded_control(toggle_row(
+                fl!("num-lock"),
+                self.config.show_num,
+                Message::ToggleShowNumLock,
+            )))
+            .add(cosmic::applet::padded_control(toggle_row(
+                fl!("scroll-lock"),
+                self.config.show_scroll,
+                Message::ToggleShowScrollLock,
+            )));
 
         self.core.applet.popup_container(content_list).into()
     }
@@ -113,48 +125,23 @@ impl cosmic::Application for AppModel {
     /// Register subscriptions for this application.
     ///
     /// Subscriptions are long-lived async tasks running in the background which
-    /// emit messages to the application through a channel. They may be conditionally
-    /// activated by selectively appending to the subscription batch, and will
-    /// continue to execute for the duration that they remain in the batch.
+    /// emit messages to the application through a channel.
     fn subscription(&self) -> Subscription<Self::Message> {
-        struct MySubscription;
-
-        Subscription::batch(vec![
-            // Create a subscription which emits updates through a channel.
-            Subscription::run(|| {
-                cosmic::iced::stream::channel(4, move |mut channel: futures::channel::mpsc::Sender<_>| async move {
-                    _ = channel.send(Message::SubscriptionChannel).await;
-
-                    futures::future::pending().await
-                })
-            }),
-            // Watch for application configuration changes.
-            self.core()
-                .watch_config::<Config>(Self::APP_ID)
-                .map(|update| {
-                    // for why in update.errors {
-                    //     tracing::error!(?why, "app config error");
-                    // }
-
-                    Message::UpdateConfig(update.config)
-                }),
-        ])
+        cosmic::iced::time::every(Duration::from_millis(200)).map(|_| Message::Tick)
     }
 
     /// Handles messages emitted by the application and its widgets.
-    ///
-    /// Tasks may be returned for asynchronous execution of code in the background
-    /// on the application's async runtime. The application will not exit until all
-    /// tasks are finished.
     fn update(&mut self, message: Self::Message) -> Task<cosmic::Action<Self::Message>> {
         match message {
-            Message::SubscriptionChannel => {
-                // For example purposes only.
+            Message::Tick => {
+                let state = LedState::read();
+                if state != self.leds {
+                    self.leds = state;
+                }
             }
-            Message::UpdateConfig(config) => {
-                self.config = config;
-            }
-            Message::ToggleExampleRow(toggled) => self.example_row = toggled,
+            Message::ToggleShowCapsLock(value) => self.set_show_caps(value),
+            Message::ToggleShowNumLock(value) => self.set_show_num(value),
+            Message::ToggleShowScrollLock(value) => self.set_show_scroll(value),
             Message::TogglePopup => {
                 return if let Some(p) = self.popup.take() {
                     destroy_popup(p)
@@ -174,7 +161,7 @@ impl cosmic::Application for AppModel {
                         .min_height(200.0)
                         .max_height(1080.0);
                     get_popup(popup_settings)
-                }
+                };
             }
             Message::PopupClosed(id) => {
                 if self.popup.as_ref() == Some(&id) {
@@ -188,4 +175,74 @@ impl cosmic::Application for AppModel {
     fn style(&self) -> Option<cosmic::iced::theme::Style> {
         Some(cosmic::applet::style())
     }
+}
+
+impl AppModel {
+    fn set_show_caps(&mut self, value: bool) {
+        if let Some(handler) = &self.config_handler
+            && let Err(error) = self.config.set_show_caps(handler, value)
+        {
+            eprintln!("error setting show_caps: {error}");
+        }
+    }
+
+    fn set_show_num(&mut self, value: bool) {
+        if let Some(handler) = &self.config_handler
+            && let Err(error) = self.config.set_show_num(handler, value)
+        {
+            eprintln!("error setting show_num: {error}");
+        }
+    }
+
+    fn set_show_scroll(&mut self, value: bool) {
+        if let Some(handler) = &self.config_handler
+            && let Err(error) = self.config.set_show_scroll(handler, value)
+        {
+            eprintln!("error setting show_scroll: {error}");
+        }
+    }
+}
+
+/// A compact indicator chip shown in the panel button.
+fn lock_chip(label: &str, active: bool) -> Element<'_, Message> {
+    widget::container(widget::text(label).size(9))
+        .padding([2, 5])
+        .class(if active {
+            cosmic::theme::Container::Primary
+        } else {
+            cosmic::theme::Container::custom(|theme| {
+                let cosmic = theme.cosmic();
+                let background = cosmic::iced::Color::from(cosmic.bg_color());
+                let on_background = cosmic::iced::Color::from(cosmic.on_bg_color());
+                cosmic::iced::widget::container::Style {
+                    background: Some(cosmic::iced::Background::Color(cosmic::iced::Color {
+                        a: 0.2,
+                        ..background
+                    })),
+                    text_color: Some(cosmic::iced::Color {
+                        a: 0.6,
+                        ..on_background
+                    }),
+                    border: cosmic::iced::Border {
+                        radius: cosmic.corner_radii.radius_s.into(),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                }
+            })
+        })
+        .into()
+}
+
+/// A popup row with a label and a toggler.
+fn toggle_row<'a>(
+    label: String,
+    value: bool,
+    on_toggle: fn(bool) -> Message,
+) -> Element<'a, Message> {
+    widget::row::with_capacity(3)
+        .push(widget::text(label))
+        .push(widget::space::horizontal())
+        .push(widget::toggler(value).on_toggle(on_toggle))
+        .into()
 }

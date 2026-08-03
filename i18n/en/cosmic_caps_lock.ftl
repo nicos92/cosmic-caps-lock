@@ -1,7 +1,3 @@
-app-title = Cosmic Caps Lock
-about = About
-view = View
-welcome = Welcome to COSMIC! ✨
-page-id = Page { $num }
-git-description = Git commit {$hash} on {$date}
-example-row = Example Row
+caps-lock = Caps Lock
+num-lock = Num Lock
+scroll-lock = Scroll Lock
