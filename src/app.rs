@@ -97,7 +97,11 @@ impl cosmic::Application for AppModel {
             .class(cosmic::theme::Button::AppletIcon)
             .on_press_down(Message::TogglePopup);
 
-        widget::autosize::autosize(button, cosmic::widget::Id::unique()).into()
+        self.core
+            .applet
+            .autosize_window(button)
+            .limits(cosmic::iced::Limits::NONE)
+            .into()
     }
 
     /// The applet's popup window will be drawn using this view method.
