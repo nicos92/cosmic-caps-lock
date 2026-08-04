@@ -3,6 +3,7 @@
 mod app;
 mod config;
 mod i18n;
+mod icons;
 mod leds;
 
 fn main() -> cosmic::iced::Result {

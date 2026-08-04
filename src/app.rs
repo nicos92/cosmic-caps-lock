@@ -3,8 +3,8 @@
 use std::time::Duration;
 
 use crate::config::{Config, Flags};
-use crate::fl;
 use crate::leds::LedState;
+use crate::{fl, icons};
 use cosmic::iced::platform_specific::shell::wayland::commands::popup::{destroy_popup, get_popup};
 use cosmic::iced::window::Id;
 use cosmic::iced::{Limits, Subscription};
@@ -82,15 +82,18 @@ impl cosmic::Application for AppModel {
     /// This view should emit messages to toggle the applet's popup window, which will
     /// be drawn using the `view_window` method.
     fn view(&self) -> Element<'_, Self::Message> {
-        let mut chips = widget::row::with_capacity(3).spacing(2);
+        let mut chips = widget::row::with_capacity(4).spacing(2);
         if self.config.show_caps {
-            chips = chips.push(lock_chip("A", self.leds.caps == Some(true)));
+            chips = chips.push(lock_chip(icons::BLOQ_MAYUS, self.leds.caps == Some(true)));
         }
         if self.config.show_num {
-            chips = chips.push(lock_chip("123", self.leds.num == Some(true)));
+            chips = chips.push(lock_chip(icons::BLOQ_NUM, self.leds.num == Some(true)));
         }
         if self.config.show_scroll {
-            chips = chips.push(lock_chip("⇅", self.leds.scroll == Some(true)));
+            chips = chips.push(lock_chip(icons::BLOQ_DESPL, self.leds.scroll == Some(true)));
+        }
+        if !self.config.show_caps && !self.config.show_num && !self.config.show_scroll {
+            chips = chips.push(lock_chip(icons::DEFAULT, false));
         }
 
         let button = widget::button::custom(chips)
@@ -207,26 +210,31 @@ impl AppModel {
     }
 }
 
-/// A compact indicator chip shown in the panel button.
-fn lock_chip(label: &str, active: bool) -> Element<'_, Message> {
-    widget::container(widget::text(label).size(9))
+/// Una pastilla indicadora compacta con icono SVG.
+fn lock_chip(icon: &'static [u8], active: bool) -> Element<'static, Message> {
+    let handle = cosmic::widget::svg::Handle::from_memory(icon);
+    let icon = widget::svg(handle).width(12).height(12).symbolic(true);
+    widget::container(icon)
         .padding([2, 5])
         .class(if active {
             cosmic::theme::Container::Primary
         } else {
             cosmic::theme::Container::custom(|theme| {
                 let cosmic = theme.cosmic();
-                let background = cosmic::iced::Color::from(cosmic.bg_color());
-                let on_background = cosmic::iced::Color::from(cosmic.on_bg_color());
+                let on_bg = cosmic.on_bg_color();
+                let bg = cosmic.bg_color();
+                let mix = |t: f32| {
+                    cosmic::iced::Color::from(cosmic::cosmic_theme::palette::Srgba::new(
+                        on_bg.red * t + bg.red * (1.0 - t),
+                        on_bg.green * t + bg.green * (1.0 - t),
+                        on_bg.blue * t + bg.blue * (1.0 - t),
+                        1.0,
+                    ))
+                };
                 cosmic::iced::widget::container::Style {
-                    background: Some(cosmic::iced::Background::Color(cosmic::iced::Color {
-                        a: 0.2,
-                        ..background
-                    })),
-                    text_color: Some(cosmic::iced::Color {
-                        a: 0.6,
-                        ..on_background
-                    }),
+                    background: Some(cosmic::iced::Background::Color(mix(0.2))),
+                    text_color: Some(mix(0.6)),
+                    icon_color: Some(mix(0.6)),
                     border: cosmic::iced::Border {
                         radius: cosmic.corner_radii.radius_s.into(),
                         ..Default::default()
