@@ -6,13 +6,19 @@ Applet para el panel de COSMIC que muestra el estado de las teclas de bloqueo de
 
 ### Flatpak (recomendada)
 
+Requisitos: Flatpak con el remote de **Flathub** configurado (si no, el runtime falla con `org.freedesktop.Platform ... no se encontró`):
+
+```sh
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+```
+
 Descarga el bundle de la última versión desde [GitHub Releases](https://github.com/nicos92/cosmic-caps-lock/releases) e instálalo:
 
 ```sh
 flatpak install ./cosmic-caps-lock-<versión>.flatpak
 ```
 
-Funciona en cualquier distro con COSMIC (Pop!_OS, Fedora, Arch, NixOS…). Para que el applet aparezca en el panel, reinicia la sesión o el panel de COSMIC.
+La primera vez pedirá descargar el runtime `org.freedesktop.Platform//25.08`. Funciona en cualquier distro con COSMIC (Pop!_OS, Fedora, Arch, NixOS…). Para que el applet aparezca en el panel, reinicia la sesión o el panel de COSMIC.
 
 ### Manual
 
