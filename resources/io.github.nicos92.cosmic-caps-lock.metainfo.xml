@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.nicos92.cosmic-caps-lock</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MPL-2.0</project_license>
+  <project_group>COSMIC</project_group>
+  <developer_name>nicos92</developer_name>
+  <update_contact>nicos92@users.noreply.github.com</update_contact>
+  <name>Cosmic Caps Lock</name>
+  <summary>Applet del panel COSMIC con el estado de Bloq Mayús, Bloq Num y Bloq Despl</summary>
+  <description>
+    <p>Applet para el panel de COSMIC que muestra el estado de las teclas de bloqueo del teclado: Bloq Mayús (Caps Lock), Bloq Num (Num Lock) y Bloq Despl (Scroll Lock).</p>
+    <p>Cada indicador puede activarse o desactivarse desde la configuración del applet.</p>
+  </description>
+  <url type="homepage">https://github.com/nicos92/cosmic-caps-lock</url>
+  <url type="bugtracker">https://github.com/nicos92/cosmic-caps-lock/issues</url>
+  <url type="vcs-browser">https://github.com/nicos92/cosmic-caps-lock</url>
+  <launchable type="desktop-id">io.github.nicos92.cosmic-caps-lock.desktop</launchable>
+  <icon type="stock">io.github.nicos92.cosmic-caps-lock-symbolic.svg</icon>
+  <provides>
+    <id>com.system76.CosmicApplet</id>
+    <binaries>
+      <binary>cosmic-caps-lock</binary>
+    </binaries>
+  </provides>
+  <requires>
+    <display_length compare="ge">360</display_length>
+  </requires>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>touch</control>
+  </supports>
+  <categories>
+    <category>COSMIC</category>
+  </categories>
+  <keywords>
+    <keyword>COSMIC</keyword>
+    <keyword>Keyboard</keyword>
+    <keyword>Caps Lock</keyword>
+  </keywords>
+  <content_rating type="oars-1.1" />
+  <releases>
+    <release version="0.1.0" date="2026-08-09">
+      <description>
+        <p>Primera versión del applet de indicadores de teclado</p>
+      </description>
+    </release>
+  </releases>
+</component>

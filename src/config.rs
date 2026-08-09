@@ -3,7 +3,7 @@
 use cosmic::cosmic_config::cosmic_config_derive::CosmicConfigEntry;
 use cosmic::cosmic_config::{self, CosmicConfigEntry};
 
-pub(crate) const APP_ID: &str = "com.github.pop-os.cosmic-app-template";
+pub(crate) const APP_ID: &str = "io.github.nicos92.cosmic-caps-lock";
 
 const CONFIG_VERSION: u64 = 2;
 
