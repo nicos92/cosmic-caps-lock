@@ -134,7 +134,11 @@ impl cosmic::Application for AppModel {
     /// Subscriptions are long-lived async tasks running in the background which
     /// emit messages to the application through a channel.
     fn subscription(&self) -> Subscription<Self::Message> {
-        cosmic::iced::time::every(Duration::from_millis(200)).map(|_| Message::Tick)
+        if self.config.show_caps || self.config.show_num || self.config.show_scroll {
+            cosmic::iced::time::every(Duration::from_millis(200)).map(|_| Message::Tick)
+        } else {
+            Subscription::none()
+        }
     }
 
     /// Handles messages emitted by the application and its widgets.
