@@ -6,7 +6,7 @@ Applet para el panel de COSMIC que muestra el estado de las teclas de bloqueo de
 
 ### Flatpak (recomendada)
 
-Descarga el bundle de la última versión desde [GitHub Releases](https://github.com/nnicos92/cosmic-caps-lock/releases) e instálalo:
+Descarga el bundle de la última versión desde [GitHub Releases](https://github.com/nicos92/cosmic-caps-lock/releases) e instálalo:
 
 ```sh
 flatpak install ./cosmic-caps-lock-<versión>.flatpak
