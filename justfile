@@ -1,5 +1,5 @@
 name := 'cosmic-caps-lock'
-appid := 'com.github.pop-os.cosmic-app-template'
+appid := 'io.github.nicos92.cosmic-caps-lock'
 
 rootdir := ''
 prefix := '/usr'
@@ -50,9 +50,9 @@ run *args:
 # Installs files
 install:
     install -Dm0755 {{ cargo-target-dir / 'release' / name }} {{bin-dst}}
-    install -Dm0644 resources/app.desktop {{desktop-dst}}
-    install -Dm0644 resources/app.metainfo.xml {{appdata-dst}}
-    install -Dm0644 resources/icon.svg {{icon-dst}}
+    install -Dm0644 resources/io.github.nicos92.cosmic-caps-lock.desktop {{desktop-dst}}
+    install -Dm0644 resources/io.github.nicos92.cosmic-caps-lock.metainfo.xml {{appdata-dst}}
+    install -Dm0644 resources/io.github.nicos92.cosmic-caps-lock-symbolic.svg {{icon-dst}}
 
 # Uninstalls installed files
 uninstall:

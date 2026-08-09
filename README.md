@@ -1,18 +1,30 @@
 # Cosmic Caps Lock
 
-An application for the COSMIC™ desktop
+Applet para el panel de COSMIC que muestra el estado de las teclas de bloqueo del teclado: **Bloq Mayús** (Caps Lock), **Bloq Num** (Num Lock) y **Bloq Despl** (Scroll Lock).
 
-## Installation
+## Instalación
 
-A [justfile](./justfile) is included by default for the [casey/just][just] command runner.
+### Flatpak (recomendada)
 
-- `just` builds the application with the default `just build-release` recipe
-- `just run` builds and runs the application
-- `just install` installs the project into the system
-- `just vendor` creates a vendored tarball
-- `just build-vendored` compiles with vendored dependencies from that tarball
-- `just check` runs clippy on the project to check for linter warnings
-- `just check-json` can be used by IDEs that support LSP
+Descarga el bundle de la última versión desde [GitHub Releases](https://github.com/nnicos92/cosmic-caps-lock/releases) e instálalo:
+
+```sh
+flatpak install ./cosmic-caps-lock-<versión>.flatpak
+```
+
+Funciona en cualquier distro con COSMIC (Pop!_OS, Fedora, Arch, NixOS…). Para que el applet aparezca en el panel, reinicia la sesión o el panel de COSMIC.
+
+### Manual
+
+Un [justfile](./justfile) está incluido por defecto para el ejecutor de recetas [casey/just][just].
+
+- `just` compila la aplicación con la receta por defecto `just build-release`
+- `just run` compila y ejecuta la aplicación
+- `just install` instala el proyecto en el sistema
+- `just vendor` crea un tarball con las dependencias
+- `just build-vendored` compila con las dependencias empaquetadas desde ese tarball
+- `just check` ejecuta clippy sobre el proyecto para comprobar avisos del linter
+- `just check-json` puede usarlo los IDEs que soporten LSP
 
 ## Translators
 
@@ -20,7 +32,7 @@ A [justfile](./justfile) is included by default for the [casey/just][just] comma
 
 ## Packaging
 
-If packaging for a Linux distribution, vendor dependencies locally with the `vendor` rule, and build with the vendored sources using the `build-vendored` rule. When installing files, use the `rootdir` and `prefix` variables to change installation paths.
+Si se empaqueta para una distribución de Linux, se venden las dependencias localmente con la regla `vendor`, y se compila con las fuentes empaquetadas usando la regla `build-vendored`. Al instalar archivos, se usan las variables `rootdir` y `prefix` para cambiar las rutas de instalación.
 
 ```sh
 just vendor
@@ -28,7 +40,26 @@ just build-vendored
 just rootdir=debian/cosmic-caps-lock prefix=/usr install
 ```
 
-It is recommended to build a source tarball with the vendored dependencies, which can typically be done by running `just vendor` on the host system before it enters the build environment.
+Se recomienda crear un tarball de fuentes con las dependencias empaquetadas, lo que normalmente se puede hacer ejecutando `just vendor` en el sistema anfitrión antes de entrar en el entorno de build.
+
+## Release Flatpak
+
+Para generar el bundle `.flatpak` que se distribuye en GitHub Releases:
+
+```sh
+# Genera cargo-sources.json (fuentes offline para el build). Requiere
+# python3 con aiohttp y toml, o `uv` (ver flatpak/generate-cargo-sources.sh).
+python3 flatpak/flatpak-cargo-generator.py Cargo.lock -o cargo-sources.json
+
+# Compila y empaqueta el app en un repositorio OSTree local
+flatpak-builder --user --force-clean --repo=build/repo build/builddir io.github.nicos92.cosmic-caps-lock.json
+
+# Exporta el bundle de un solo archivo para distribuir
+flatpak build-bundle build/repo cosmic-caps-lock-0.1.0.flatpak io.github.nicos92.cosmic-caps-lock
+```
+
+Requisitos previos: `flatpak-builder` y los runtimes de Flathub
+`org.freedesktop.{Platform,Sdk}//25.08` y `org.freedesktop.Sdk.Extension.rust-stable//25.08`.
 
 ## Developers
 

@@ -12,3 +12,10 @@ debian/*
 !debian/install
 !debian/rules
 !debian/source
+
+# Flatpak stuff
+cargo-sources.json
+.flatpak-builder
+/repo/
+/build/
+*.flatpak

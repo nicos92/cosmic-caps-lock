@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- cuerpo del candado -->
+  <rect x="38" y="56" width="52" height="42" rx="8" fill="#000000"/>
+  <!-- arco del candado -->
+  <path d="M52 56 V46 a12 12 0 0 1 24 0 V56" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="round"/>
+  <!-- ojo de la llave -->
+  <circle cx="64" cy="77" r="5" fill="#000000"/>
+</svg>

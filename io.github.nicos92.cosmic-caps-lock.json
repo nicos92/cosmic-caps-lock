@@ -1,0 +1,44 @@
+{
+  "id": "io.github.nicos92.cosmic-caps-lock",
+  "runtime": "org.freedesktop.Platform",
+  "runtime-version": "25.08",
+  "sdk": "org.freedesktop.Sdk",
+  "sdk-extensions": ["org.freedesktop.Sdk.Extension.rust-stable"],
+  "command": "cosmic-caps-lock",
+  "finish-args": [
+    "--share=ipc",
+    "--socket=wayland",
+    "--device=dri",
+    "--filesystem=xdg-config/cosmic:rw",
+    "--filesystem=/sys/class/leds:ro",
+    "--talk-name=com.system76.CosmicSettingsDaemon.*",
+    "--talk-name=com.system76.CosmicSettingsDaemon"
+  ],
+  "build-options": {
+    "append-path": "/usr/lib/sdk/rust-stable/bin",
+    "env": {
+      "CARGO_HOME": "/run/build/cosmic-caps-lock/cargo"
+    }
+  },
+  "modules": [
+    {
+      "name": "cosmic-caps-lock",
+      "buildsystem": "simple",
+      "build-commands": [
+        "cargo --offline fetch --manifest-path Cargo.toml --verbose",
+        "cargo --offline build --release --verbose",
+        "install -Dm0755 ./target/release/cosmic-caps-lock /app/bin/cosmic-caps-lock",
+        "install -Dm0644 ./resources/io.github.nicos92.cosmic-caps-lock.desktop -t /app/share/applications/",
+        "install -Dm0644 ./resources/io.github.nicos92.cosmic-caps-lock.metainfo.xml -t /app/share/metainfo/",
+        "install -Dm0644 ./resources/io.github.nicos92.cosmic-caps-lock-symbolic.svg -t /app/share/icons/hicolor/scalable/apps/"
+      ],
+      "sources": [
+        {
+          "type": "dir",
+          "path": "./"
+        },
+        "./cargo-sources.json"
+      ]
+    }
+  ]
+}
