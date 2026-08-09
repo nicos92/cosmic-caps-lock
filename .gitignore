@@ -19,3 +19,7 @@ cargo-sources.json
 /repo/
 /build/
 *.flatpak
+
+# Documentación personal (no se publica)
+AGENTS.md
+/misdocs/
