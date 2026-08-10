@@ -41,6 +41,11 @@
   </keywords>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="0.1.1" date="2026-08-09">
+      <description>
+        <p>Corrige el arranque como applet Flatpak: quita el argumento %F del .desktop que hacía fallar el lanzamiento</p>
+      </description>
+    </release>
     <release version="0.1.0" date="2026-08-09">
       <description>
         <p>Primera versión del applet de indicadores de teclado</p>
